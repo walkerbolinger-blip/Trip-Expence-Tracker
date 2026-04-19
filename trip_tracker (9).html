@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Trip Tracker" />
+<title>Trip Tracker — Road Trip 2025</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eceae6;
+    --text: #1a1a18; --text2: #6b6b67; --text3: #a0a09c;
+    --border: rgba(0,0,0,0.11); --border2: rgba(0,0,0,0.2);
+    --danger: #c0392b; --success: #1e7e45;
+    --radius: 12px; --radius-sm: 8px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #f0efea; --text2: #9a9a94; --text3: #5e5e5a;
+      --border: rgba(255,255,255,0.09); --border2: rgba(255,255,255,0.18);
+      --danger: #e05c4e; --success: #4caf76;
+    }
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg2); color: var(--text);
+    min-height: 100vh;
+    padding: 20px 14px calc(32px + var(--safe-bottom));
+    -webkit-text-size-adjust: 100%;
+  }
+  .container { max-width: 520px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 3px; }
+  .subtitle { font-size: 13px; color: var(--text2); margin-bottom: 22px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 16px; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .tab-btn { height: 42px; border: none; background: transparent; color: var(--text2); font-size: 14px; font-family: inherit; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: all 0.13s; }
+  .tab-btn.active { background: var(--text); color: var(--bg); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
+  .card-header { padding: 9px 14px; background: var(--bg2); border-bottom: 0.5px solid var(--border); font-size: 11px; color: var(--text2); letter-spacing: 0.05em; text-transform: uppercase; display:flex; justify-content:space-between; align-items:center; }
+  .form-inner { padding: 14px; display: flex; flex-direction: column; gap: 11px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; color: var(--text2); }
+  input[type="text"], input[type="number"], select {
+    height: 40px; padding: 0 11px;
+    border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    background: var(--bg); color: var(--text);
+    font-size: 15px; font-family: inherit; width: 100%;
+    outline: none; -webkit-appearance: none; appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--text2); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .people-toggle { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .toggle-btn { height: 38px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); color: var(--text2); font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.13s; -webkit-tap-highlight-color: transparent; }
+  .toggle-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn { height: 42px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 15px; font-family: inherit; font-weight: 500; cursor: pointer; width: 100%; -webkit-tap-highlight-color: transparent; transition: background 0.12s, transform 0.1s; }
+  .btn:hover { background: var(--bg3); }
+  .btn:active { transform: scale(0.98); }
+  .err { font-size: 12px; color: var(--danger); }
+  .split-note { font-size: 12px; color: var(--text2); min-height: 16px; }
+  .section-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+
+  /* Gas person cards */
+  .gas-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .gas-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 10px 9px; }
+  .gc-name { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+  .gc-paid { font-size: 15px; font-weight: 600; }
+  .gc-status { font-size: 10px; font-weight: 600; margin-top: 4px; }
+
+  /* Debt rows */
+  .debt-row { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-bottom: 0.5px solid var(--border); }
+  .debt-row:last-child { border-bottom: none; }
+  .dr-from { font-size: 14px; font-weight: 600; min-width: 52px; }
+  .dr-mid { font-size: 12px; color: var(--text3); flex: 1; }
+  .dr-amt { font-size: 15px; font-weight: 700; color: var(--danger); }
+  .dr-note { font-size: 11px; color: var(--text2); padding: 6px 14px 10px; }
+  .empty-msg { padding: 14px; font-size: 13px; color: var(--text3); }
+
+  /* Other expenses */
+  .person-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .person-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 10px 9px; }
+  .pc-name { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+  .pc-paid { font-size: 15px; font-weight: 600; }
+  .pc-net { font-size: 10px; margin-top: 2px; }
+  .settle-row { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-bottom: 0.5px solid var(--border); }
+  .settle-row:last-child { border-bottom: none; }
+  .s-from { font-size: 14px; font-weight: 600; min-width: 58px; }
+  .s-word { font-size: 12px; color: var(--text3); flex: 1; }
+  .s-amt { font-size: 15px; font-weight: 700; color: var(--danger); }
+  .settle-empty { padding: 14px; font-size: 13px; color: var(--text3); }
+
+  /* Log */
+  .log-row { display: grid; grid-template-columns: 1fr auto auto 28px; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 0.5px solid var(--border); }
+  .log-row:last-child { border-bottom: none; }
+  .lr-desc { font-size: 13px; font-weight: 500; }
+  .lr-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .lr-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 16px; padding: 0; line-height: 1; -webkit-tap-highlight-color: transparent; }
+  .lr-del:hover, .lr-del:active { color: var(--danger); }
+  .log-head { display: grid; grid-template-columns: 1fr auto auto 28px; gap: 8px; padding: 8px 14px; background: var(--bg2); border-bottom: 0.5px solid var(--border); font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em; }
+  .log-empty { padding: 20px 14px; text-align: center; font-size: 13px; color: var(--text3); }
+  .badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--bg3); color: var(--text2); margin-left: 4px; vertical-align: middle; }
+  .cat-filter { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .cat-filter::-webkit-scrollbar { display: none; }
+  .cat-pill { height: 30px; padding: 0 13px; border: 0.5px solid var(--border2); border-radius: 20px; background: var(--bg); color: var(--text2); font-size: 12px; font-family: inherit; cursor: pointer; white-space: nowrap; flex-shrink: 0; -webkit-tap-highlight-color: transparent; transition: all 0.12s; }
+  .cat-pill.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding: 0 2px; }
+  .trip-total { font-size: 13px; color: var(--text2); }
+  .trip-total strong { color: var(--text); font-weight: 600; }
+  .clear-btn { background: none; border: none; cursor: pointer; font-size: 12px; color: var(--text3); font-family: inherit; -webkit-tap-highlight-color: transparent; }
+  .clear-btn:hover { color: var(--danger); }
+  .export-btn { width: 100%; height: 40px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); color: var(--text2); font-size: 13px; font-family: inherit; cursor: pointer; margin-top: 14px; -webkit-tap-highlight-color: transparent; }
+  .export-btn:active { background: var(--bg3); }
+  .copied-toast { position: fixed; bottom: calc(24px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); font-size: 13px; padding: 8px 18px; border-radius: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s; white-space: nowrap; z-index: 999; }
+  .copied-toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>&#9981; Trip Tracker</h1>
+  <p class="subtitle">Road Trip 2025 — Walker, Henry, Alex, Sean</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-btn-gas" onclick="switchTab('gas')">&#9981; Gas</button>
+    <button class="tab-btn" id="tab-btn-other" onclick="switchTab('other')">&#128179; Other</button>
+  </div>
+
+  <!-- ═══ GAS TAB ═══ -->
+  <div class="tab-panel active" id="tab-gas">
+
+    <div class="card">
+      <div class="card-header">Log a fill-up</div>
+      <div class="form-inner">
+        <div class="two-col">
+          <div class="field">
+            <label>Who paid?</label>
+            <select id="g-payer">
+              <option value="">Select...</option>
+              <option>Walker</option><option>Henry</option><option>Alex</option><option>Sean</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Amount ($)</label>
+            <input type="number" id="g-amount" placeholder="0.00" min="0" step="0.01" />
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label>Description (optional)</label>
+            <input type="text" id="g-desc" placeholder="e.g. Leaving Zion" />
+          </div>
+          <div class="field">
+            <label>Paid with</label>
+            <select id="g-method">
+              <option>Card</option><option>Cash</option><option>Venmo</option><option>Apple Pay</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="addGas()">Add fill-up</button>
+        <div id="g-err" class="err" style="display:none;"></div>
+      </div>
+    </div>
+
+    <p class="section-label">Who owes what in gas</p>
+    <div id="gas-grid" class="gas-grid"></div>
+
+    <div class="card">
+      <div class="card-header">Gas debts</div>
+      <div id="gas-debts-body"></div>
+    </div>
+
+    <div class="card">
+      <div class="log-head"><span>Fill-up</span><span>Who paid</span><span>Per person</span><span></span></div>
+      <div id="gas-log-body"></div>
+    </div>
+
+    <div class="footer-row">
+      <span class="trip-total">Gas total: <strong id="gas-total">$0.00</strong></span>
+      <button class="clear-btn" onclick="clearGas()">Clear</button>
+    </div>
+  </div>
+
+  <!-- ═══ OTHER TAB ═══ -->
+  <div class="tab-panel" id="tab-other">
+
+    <div class="card">
+      <div class="card-header">Add expense</div>
+      <div class="form-inner">
+        <div class="three-col">
+          <div class="field">
+            <label>Category</label>
+            <select id="o-category">
+              <option>Food</option><option>Campsite</option><option>Activities</option>
+              <option>Supplies</option><option>Lodging</option><option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Amount ($)</label>
+            <input type="number" id="o-amount" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Paid with</label>
+            <select id="o-method">
+              <option>Card</option><option>Cash</option><option>Venmo</option><option>Apple Pay</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <input type="text" id="o-desc" placeholder="e.g. Campsite at Zion" />
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label>Who paid?</label>
+            <select id="o-payer">
+              <option value="">Select...</option>
+              <option>Walker</option><option>Henry</option><option>Alex</option><option>Sean</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Splitting with</label>
+            <div class="people-toggle" id="o-toggles"></div>
+          </div>
+        </div>
+        <div class="split-note" id="o-split-note"></div>
+        <button class="btn" onclick="addOther()">Add expense</button>
+        <div id="o-err" class="err" style="display:none;"></div>
+      </div>
+    </div>
+
+    <p class="section-label">Balances</p>
+    <div id="other-grid" class="person-grid"></div>
+
+    <div class="card">
+      <div class="card-header">Who owes who</div>
+      <div id="other-settle"></div>
+    </div>
+
+    <div class="card">
+      <div style="padding:10px 14px 8px; display:flex; gap:8px; align-items:center;">
+        <span style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;">Filter</span>
+        <div class="cat-filter" id="o-cat-filter" style="flex:1;"></div>
+      </div>
+      <div class="log-head"><span>Expense</span><span>Paid by</span><span>Each owes</span><span></span></div>
+      <div id="other-log-body"></div>
+    </div>
+
+    <div class="footer-row">
+      <span class="trip-total">Other total: <strong id="other-total">$0.00</strong></span>
+      <button class="clear-btn" onclick="clearOther()">Clear</button>
+    </div>
+  </div>
+
+  <button class="export-btn" onclick="exportSummary()">&#x2398; Copy summary to clipboard</button>
+</div>
+<div class="copied-toast" id="toast">Copied to clipboard</div>
+
+<script>
+const NAMES = ["Walker","Henry","Alex","Sean"];
+const OTHER_CATS = ["Food","Campsite","Activities","Supplies","Lodging","Other"];
+
+let gasEntries   = [];
+let otherEntries = [];
+let oSplitWith   = [...NAMES];
+let oFilterCat   = "All";
+
+try { gasEntries   = JSON.parse(localStorage.getItem("rt25_gas2")  || "[]"); } catch(e) {}
+try { otherEntries = JSON.parse(localStorage.getItem("rt25_other2")|| "[]"); } catch(e) {}
+
+function saveGas()   { try { localStorage.setItem("rt25_gas2",   JSON.stringify(gasEntries));   } catch(e) {} }
+function saveOther() { try { localStorage.setItem("rt25_other2", JSON.stringify(otherEntries)); } catch(e) {} }
+function fmt(n) { return "$" + Math.abs(n).toFixed(2); }
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  ["gas","other"].forEach(t => {
+    document.getElementById("tab-" + t).classList.toggle("active", t === tab);
+    document.getElementById("tab-btn-" + t).classList.toggle("active", t === tab);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GAS MODEL
+//
+// Each person has their own running balance with every other person.
+// When Walker pays $400:
+//   Henry owes Walker $100
+//   Alex  owes Walker $100
+//   Sean  owes Walker $100
+//
+// When Henry pays $100:
+//   Henry's $100 first clears what HE owes to others (Walker: $100) → Henry zeroed out
+//   The remaining $0 would then be split as new debt to others
+//   Since Henry's $100 exactly covers his debt, no new debt is created for anyone
+//   Alex still owes $100 to Walker, Sean still owes $100 to Walker
+//
+// When Alex pays $100:
+//   Alex's $100 first clears what HE owes (Walker: $100) → Alex zeroed out
+//   No new debt created
+//
+// When Sean pays $100:
+//   Sean's $100 first clears what HE owes (Walker: $100) → Sean zeroed out
+//
+// The key insight: when you pay for gas, that money first goes toward
+// clearing YOUR existing debt. Any excess beyond your debt becomes
+// credit that others owe you (for their share of your fill-up).
+// ══════════════════════════════════════════════════════════════════════════════
+
+function calcGasDebts() {
+  // THE CORRECT MODEL:
+  // Fill-ups are logged by whoever physically swipes their card.
+  // The FIRST person to pay a big fill-up is the "lender" for that round.
+  // Everyone else owes that person their share.
+  // When someone else pays, their payment is a REPAYMENT — it clears their debt
+  // to whoever they owe, and does NOT get split among the group as a new expense.
+  //
+  // Walker pays $400 → Walker is owed $100 each by Henry, Alex, Sean.
+  // Henry pays $100  → Henry owed Walker $100. He paid $100. Henry = $0. Done.
+  //                    Alex still owes Walker $100. Sean still owes Walker $100.
+  //
+  // Implementation: process fill-ups in order.
+  // Each fill-up: payer's money first pays off THEIR OWN debts.
+  // Any leftover becomes credit that others owe the payer.
+
+  const totalPaid = {};
+  NAMES.forEach(n => totalPaid[n] = 0);
+  let totalGas = 0;
+  gasEntries.forEach(e => { totalPaid[e.payer] += e.amount; totalGas += e.amount; });
+
+  // Running debt ledger: debt[a][b] = a owes b this amount
+  const debt = {};
+  NAMES.forEach(a => { debt[a] = {}; NAMES.forEach(b => { debt[a][b] = 0; }); });
+
+  gasEntries.forEach(e => {
+    let remaining = e.amount;
+
+    // First: use this payment to clear payer's existing debts (oldest creditors first)
+    NAMES.forEach(creditor => {
+      if (creditor === e.payer) return;
+      if (debt[e.payer][creditor] > 0 && remaining > 0) {
+        const cleared = Math.min(debt[e.payer][creditor], remaining);
+        debt[e.payer][creditor] -= cleared;
+        remaining -= cleared;
+      }
+    });
+
+    // Then: any leftover means payer fronted money — each other person owes their share
+    if (remaining > 0.005) {
+      const share = remaining / NAMES.length; // payer's own share included
+      NAMES.forEach(n => {
+        if (n === e.payer) return;
+        debt[n][e.payer] += share;
+      });
+    }
+  });
+
+  // Build balance and simplified debt list
+  const balance = {};
+  NAMES.forEach(n => {
+    let owes = 0, owed = 0;
+    NAMES.forEach(other => { owes += debt[n][other]; owed += debt[other][n]; });
+    balance[n] = owed - owes;
+  });
+
+  return { simplified: debt, totalPaid, totalGas, balance };
+}
+
+function addGas() {
+  const payer  = document.getElementById("g-payer").value;
+  const amount = parseFloat(document.getElementById("g-amount").value);
+  const desc   = document.getElementById("g-desc").value.trim() || "Fill-up";
+  const method = document.getElementById("g-method").value;
+  const err    = document.getElementById("g-err");
+  if (!payer || isNaN(amount) || amount <= 0) {
+    err.textContent = "Select who paid and enter an amount.";
+    err.style.display = "block"; return;
+  }
+  err.style.display = "none";
+  gasEntries.push({ payer, amount, desc, method, id: Date.now() });
+  saveGas();
+  document.getElementById("g-payer").value  = "";
+  document.getElementById("g-amount").value = "";
+  document.getElementById("g-desc").value   = "";
+  renderGas();
+}
+
+function deleteGas(id) { gasEntries = gasEntries.filter(e => e.id !== id); saveGas(); renderGas(); }
+function clearGas() {
+  if (!gasEntries.length) return;
+  if (confirm("Clear all gas entries?")) { gasEntries = []; saveGas(); renderGas(); }
+}
+
+
+
+function renderGas() {
+  const { simplified, totalPaid, totalGas, balance } = calcGasDebts();
+  document.getElementById("gas-total").textContent = fmt(totalGas);
+
+  document.getElementById("gas-grid").innerHTML = NAMES.map(n => {
+    const b = balance[n];
+    const isSquare = Math.abs(b) < 0.005 && totalGas > 0;
+    const color  = totalGas === 0 ? "var(--text3)" : isSquare ? "var(--success)" : b > 0 ? "var(--success)" : "var(--danger)";
+    const status = totalGas === 0 ? "—" : isSquare ? "Square ✓" : b > 0 ? "Owed " + fmt(b) : "Owes " + fmt(b);
+    return `<div class="gas-card">
+      <div class="gc-name">${n}</div>
+      <div class="gc-paid">${fmt(totalPaid[n])} paid</div>
+      <div class="gc-status" style="color:${color}">${status}</div>
+    </div>`;
+  }).join("");
+
+  const db = document.getElementById("gas-debts-body");
+  const debtLines = [];
+  NAMES.forEach(a => { NAMES.forEach(b => { if ((simplified[a][b] || 0) > 0.005) debtLines.push({ from: a, to: b, amt: simplified[a][b] }); }); });
+
+  if (totalGas === 0) {
+    db.innerHTML = `<div class="empty-msg">No fill-ups logged yet.</div>`;
+  } else if (debtLines.length === 0) {
+    db.innerHTML = `<div class="empty-msg" style="color:var(--success);font-weight:600;">Everyone is square on gas ✓</div>`;
+  } else {
+    db.innerHTML = debtLines.map(d =>
+      `<div class="debt-row"><span class="dr-from">${d.from}</span><span class="dr-mid">owes ${d.to}</span><span class="dr-amt">${fmt(d.amt)}</span></div>`
+    ).join("") + `<div class="dr-note">Pay it off by buying the next fill-up ⛽</div>`;
+  }
+
+  const lb = document.getElementById("gas-log-body");
+  if (gasEntries.length === 0) { lb.innerHTML = `<div class="log-empty">No fill-ups yet.</div>`; return; }
+  lb.innerHTML = [...gasEntries].reverse().map(e => {
+    const perPerson = e.amount / NAMES.length;
+    const badge = `<span class="badge">${e.method}</span>`;
+    return `<div class="log-row">
+      <div><div class="lr-desc">${e.desc}${badge}</div></div>
+      <div style="font-size:12px;color:var(--text2);text-align:right;white-space:nowrap;">${e.payer}</div>
+      <div style="font-size:11px;color:var(--text2);text-align:right;white-space:nowrap;">${fmt(perPerson)} each</div>
+      <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
+        <span style="font-size:13px;font-weight:600;">${fmt(e.amount)}</span>
+        <button class="lr-del" onclick="deleteGas(${e.id})">✕</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OTHER EXPENSES
+// ══════════════════════════════════════════════════════════════════════════════
+
+function buildToggles() {
+  oSplitWith = [...NAMES];
+  document.getElementById("o-toggles").innerHTML = NAMES.map(n =>
+    `<button class="toggle-btn active" id="otog-${n}" onclick="toggleOther('${n}')">${n}</button>`
+  ).join("");
+  document.getElementById("o-split-note").textContent = "";
+}
+
+function toggleOther(name) {
+  const idx = oSplitWith.indexOf(name);
+  if (idx > -1) {
+    if (oSplitWith.length === 1) return;
+    oSplitWith.splice(idx, 1);
+    document.getElementById("otog-" + name).classList.remove("active");
+  } else {
+    oSplitWith.push(name);
+    document.getElementById("otog-" + name).classList.add("active");
+  }
+  const excl = NAMES.filter(n => !oSplitWith.includes(n));
+  document.getElementById("o-split-note").textContent = excl.length
+    ? excl.join(", ") + (excl.length === 1 ? " is" : " are") + " excluded." : "";
+}
+
+function addOther() {
+  const desc     = document.getElementById("o-desc").value.trim();
+  const payer    = document.getElementById("o-payer").value;
+  const amount   = parseFloat(document.getElementById("o-amount").value);
+  const category = document.getElementById("o-category").value;
+  const method   = document.getElementById("o-method").value;
+  const err      = document.getElementById("o-err");
+  if (!desc || !payer || isNaN(amount) || amount <= 0) {
+    err.textContent = "Fill in all fields."; err.style.display = "block"; return;
+  }
+  if (!oSplitWith.includes(payer)) {
+    err.textContent = payer + " can't pay for something they're excluded from.";
+    err.style.display = "block"; return;
+  }
+  err.style.display = "none";
+  otherEntries.push({ desc, payer, amount, category, method, splitWith: [...oSplitWith], id: Date.now() });
+  saveOther();
+  document.getElementById("o-desc").value   = "";
+  document.getElementById("o-payer").value  = "";
+  document.getElementById("o-amount").value = "";
+  buildToggles();
+  renderOther();
+}
+
+function deleteOther(id) { otherEntries = otherEntries.filter(e => e.id !== id); saveOther(); renderOther(); }
+function clearOther() {
+  if (!otherEntries.length) return;
+  if (confirm("Clear all other expenses?")) { otherEntries = []; saveOther(); renderOther(); }
+}
+
+function calcOther() {
+  const net = {}, paid = {};
+  NAMES.forEach(n => { net[n] = 0; paid[n] = 0; });
+  let total = 0;
+  otherEntries.forEach(e => {
+    const split = e.splitWith && e.splitWith.length ? e.splitWith : [...NAMES];
+    const share = e.amount / split.length;
+    total += e.amount;
+    paid[e.payer] += e.amount;
+    net[e.payer]  += e.amount;
+    split.forEach(n => { net[n] -= share; });
+  });
+  return { net, paid, total };
+}
+
+function simplifyDebts(net) {
+  const cr = [], db = [];
+  NAMES.forEach(n => {
+    if (net[n] >  0.005) cr.push({ name: n, amt:  net[n] });
+    if (net[n] < -0.005) db.push({ name: n, amt: -net[n] });
+  });
+  cr.sort((a,b) => b.amt - a.amt);
+  db.sort((a,b) => b.amt - a.amt);
+  const crc = cr.map(x=>({...x})), dbc = db.map(x=>({...x}));
+  const debts = [];
+  let i = 0, j = 0;
+  while (i < crc.length && j < dbc.length) {
+    const pay = Math.min(crc[i].amt, dbc[j].amt);
+    if (pay > 0.005) debts.push({ from: dbc[j].name, to: crc[i].name, amt: pay });
+    crc[i].amt -= pay; dbc[j].amt -= pay;
+    if (crc[i].amt < 0.005) i++;
+    if (dbc[j].amt < 0.005) j++;
+  }
+  return debts;
+}
+
+function setOFilter(cat) { oFilterCat = cat; renderOther(); }
+
+function renderOther() {
+  const { net, paid, total } = calcOther();
+  document.getElementById("other-total").textContent = fmt(total);
+
+  document.getElementById("other-grid").innerHTML = NAMES.map(n => {
+    const b = net[n];
+    const color = Math.abs(b) < 0.005 ? "var(--text3)" : b > 0 ? "var(--success)" : "var(--danger)";
+    const label = Math.abs(b) < 0.005 ? "square" : (b > 0 ? "gets back " : "owes ") + fmt(b);
+    return `<div class="person-card">
+      <div class="pc-name">${n}</div>
+      <div class="pc-paid">${fmt(paid[n])} paid</div>
+      <div class="pc-net" style="color:${color}">${label}</div>
+    </div>`;
+  }).join("");
+
+  const debts = simplifyDebts(net);
+  document.getElementById("other-settle").innerHTML = debts.length === 0
+    ? `<div class="settle-empty">${total === 0 ? "No expenses yet." : "Everyone is square."}</div>`
+    : debts.map(d =>
+        `<div class="settle-row">
+          <span class="s-from">${d.from}</span>
+          <span class="s-word">owes ${d.to}</span>
+          <span class="s-amt">${fmt(d.amt)}</span>
+        </div>`
+      ).join("");
+
+  const usedCats = ["All", ...OTHER_CATS.filter(c => otherEntries.some(e => e.category === c))];
+  document.getElementById("o-cat-filter").innerHTML = usedCats.map(c =>
+    `<button class="cat-pill ${oFilterCat===c?"active":""}" onclick="setOFilter('${c}')">${c}</button>`
+  ).join("");
+
+  const filtered = oFilterCat === "All" ? otherEntries : otherEntries.filter(e => e.category === oFilterCat);
+  const lb = document.getElementById("other-log-body");
+  if (filtered.length === 0) {
+    lb.innerHTML = `<div class="log-empty">${otherEntries.length === 0 ? "No expenses yet." : "None in this category."}</div>`; return;
+  }
+  lb.innerHTML = [...filtered].reverse().map(e => {
+    const split = e.splitWith && e.splitWith.length ? e.splitWith : [...NAMES];
+    const each  = e.amount / split.length;
+    const excl  = NAMES.filter(n => !split.includes(n));
+    const meta  = [e.category, excl.length ? "excl. "+excl.join(", ") : ""].filter(Boolean).join(" · ");
+    const badge = e.method ? `<span class="badge">${e.method}</span>` : "";
+    return `<div class="log-row">
+      <div>
+        <div class="lr-desc">${e.desc}${badge}</div>
+        <div class="lr-meta">${meta}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);text-align:right;white-space:nowrap;">${e.payer}</div>
+      <div style="font-size:11px;color:var(--text2);text-align:right;white-space:nowrap;">${fmt(each)}&times;${split.length}</div>
+      <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
+        <span style="font-size:13px;font-weight:600;">${fmt(e.amount)}</span>
+        <button class="lr-del" onclick="deleteOther(${e.id})">&#x2715;</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+function exportSummary() {
+  const { simplified, totalPaid, totalGas } = calcGasDebts();
+  const { net: on, paid: op, total: ot } = calcOther();
+  const debts = simplifyDebts(on);
+  const gasDebtLines = [];
+  NAMES.forEach(a => NAMES.forEach(b => {
+    if ((simplified[a][b]||0) > 0.005) gasDebtLines.push(`  ${a} owes ${b}: ${fmt(simplified[a][b])}`);
+  }));
+  const lines = [
+    "=== ROAD TRIP 2025 — SUMMARY ===", "",
+    "GAS:",
+    ...NAMES.map(n => `  ${n}: paid ${fmt(totalPaid[n])}`),
+    "  Gas debts:",
+    ...(gasDebtLines.length ? gasDebtLines : ["  Everyone square."]),
+    `  Total gas: ${fmt(totalGas)}`, "",
+    "OTHER EXPENSES:",
+    ...NAMES.map(n => {
+      const b = on[n]; const s = Math.abs(b)<0.005?"square":(b>0?"gets back ":"owes ")+fmt(b);
+      return `  ${n}: paid ${fmt(op[n])} — ${s}`;
+    }),
+    ...(debts.length ? debts.map(d=>`  ${d.from} owes ${d.to}: ${fmt(d.amt)}`) : ["  Everyone square."]),
+    `  Total other: ${fmt(ot)}`
+  ];
+  const text = lines.join("\n");
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(showToast).catch(()=>fallbackCopy(text));
+  else fallbackCopy(text);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+  showToast();
+}
+function showToast() {
+  const t = document.getElementById("toast");
+  t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2000);
+}
+
+buildToggles();
+renderGas();
+renderOther();
+</script>
+</body>
+</html>
